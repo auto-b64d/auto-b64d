@@ -25,7 +25,7 @@ const replaceAllB64In = element => {
 }
 const revertReplacedIn = element => {
 	element.innerHTML = element.innerHTML.replace(
-		/<a(?: \w+="[^"]+")+><!--(.+(?!->))-->.+<\/a>/g,
+		/<a(?: \w+="[^"]+")+><!--(.+(?!->))-->.+?<\/a>/g,
 		(_, $1) => $1
 	)
 }
