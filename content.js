@@ -38,18 +38,14 @@ if (pageType === 'yt') {
 		})
 	;(async () => {
 		const { target: comments } = await findElement(document.body, mutation => mutation.target.id === 'contents')
-		console.log(comments)
 		new MutationObserver(mutations => {
 			const observeOptions = { childList: true, subtree: true }
-			console.log(['MUT'], mutations)
 			for (const mutation of mutations) {
 				for (const comment of [ ...mutation.addedNodes ].filter(node => node.nodeName === 'YTD-COMMENT-THREAD-RENDERER')) {
 					const content = comment.querySelector('#content-text')
 					replaceAllB64In(content)
 					const contentObserver = new MutationObserver(mutations => {
 						for (const mutation of mutations) {
-							console.log('mutation', mutation)
-							// if (mutation.addedNodes.length !== mutation.removedNodes.length) return
 							contentObserver.disconnect()
 							mutation.target.innerHTML = replaceAllB64([ ...mutation.addedNodes ].filter(node => (node.innerHTML ?? node.data) !== '\n').map(node => node.outerHTML ?? node.data).join('\n'))
 							contentObserver.observe(content, observeOptions)
