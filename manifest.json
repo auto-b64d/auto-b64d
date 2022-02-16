@@ -6,11 +6,6 @@
 	"icons": {
 		"128": "128.png"
 	},
-	"permissions": [
-		"background",
-		"scripting",
-		"storage"
-	],
 	"host_permissions": [
 		"https://arca.live/b/scottoberg/*",
 		"https://www.youtube.com/watch?v=G30Zb1uX5sk*"
@@ -20,11 +15,5 @@
 			"matches": [ "https://arca.live/b/scottoberg/*", "https://www.youtube.com/watch?v=G30Zb1uX5sk*" ],
 			"js": [ "content.js" ]
 		}
-	],
-	"background": {
-		"service_worker": "bg.js"
-	},
-	"action": {
-		"default_popup": "popup.html"
-	}
+	]
 }

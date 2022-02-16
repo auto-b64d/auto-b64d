@@ -5,78 +5,62 @@ const pageType =
 	  ? 'yt'
 	  : 'unknown'
 const tagMaker = {
-	arcaLive: (matched, link) => `<a href='${link}'><!--${matched}-->${link}</a>`,
-	yt: (matched, link) => `<a class='yt-simple-endpoint yt-formatted-string' spellcheck='false' href='${link}'><!--${matched}-->${link}</a>`,
+	arcaLive: link => `<a href='${link}'>${link}</a>`,
+	yt: link => `<a class='yt-simple-endpoint yt-formatted-string' spellcheck='false' href='${link}'>${link}</a>`,
 }
-let enabled = true
-let elementsNeedToUpdate = []
 
-const replaceAllB64In = element => {
-	if (!/[A-Z]/.test(element.innerHTML)) return
-	element.innerHTML = element.innerHTML.replace(
-		base64Regex,
-		matched => {
-			if (!/[A-Z]/.test(matched)) return matched
+const replaceAllB64 = str => str.replace(
+	/(?<!\.)\baHR0c[a-zA-Z0-9+/]*={0,2}/g,
+	matched => {
+		try {
 			const link = atob(matched)
-			if (!/^https?:\/\/\w+(?:\.\w+)+\/.*$/.test(link)) return matched
-			return tagMaker[pageType](matched, link)
+			return tagMaker[pageType](link)
+		} catch {
+			return matched
 		}
-	)
+	}
+)
+const replaceAllB64In = element => {
+	element.innerHTML = replaceAllB64(element.innerHTML)
 }
-const revertReplacedIn = element => {
-	element.innerHTML = element.innerHTML.replace(
-		/<a(?: \w+="[^"]+")+><!--(.+(?!->))-->.+?<\/a>/g,
-		(_, $1) => $1
-	)
-}
-const setElementsNeedToUpdate = () => {
-	if (pageType === 'arcaLive') {
-		const articleContent = document.querySelector('.article-content')
-		elementsNeedToUpdate.push(articleContent)
-		const comments = document.getElementById('comment').children[1]
-		elementsNeedToUpdate.push(comments)
-	} else if (pageType === 'yt') {
-		const bodyObserver = new MutationObserver(mutations => {
-			const found = mutations.find(mutation => mutation.target.id === 'sections' && mutation.removedNodes.length === 0)
-			if (found !== undefined) {
-				bodyObserver.disconnect()
-				const comments = found.target.querySelector('#contents')
-				new MutationObserver(mutations => {
-					for (const mutation of mutations.filter(mutation => mutation.addedNodes.length !== 0)) {
-						for (const comment of [ ...mutation.addedNodes ].filter(node => node.nodeName === 'YTD-COMMENT-THREAD-RENDERER')) {
-							const content = comment.querySelector('#content-text')
-							elementsNeedToUpdate.push(content)
-							if (enabled) replaceAllB64In(content)
-						}
-					}
-				}).observe(comments, { childList: true })
-			}
+if (pageType === 'yt') {
+	const findElement = (target, checker) =>
+		new Promise(resolve => {
+			const observer = new MutationObserver(mutations => {
+				const filtered = mutations.filter(mutation => mutation.addedNodes.length !== 0)
+				if (filtered.length === 0) return
+				const found = filtered.find(checker)
+				if (found === undefined) return
+				observer.disconnect()
+				resolve(found)
+			})
+			observer.observe(target, { childList: true, subtree: true })
 		})
-		bodyObserver.observe(document.body, { childList: true, subtree: true })
-	}
+	;(async () => {
+		const { target: comments } = await findElement(document.body, mutation => mutation.target.id === 'contents')
+		console.log(comments)
+		new MutationObserver(mutations => {
+			const observeOptions = { childList: true, subtree: true }
+			console.log(['MUT'], mutations)
+			for (const mutation of mutations) {
+				for (const comment of [ ...mutation.addedNodes ].filter(node => node.nodeName === 'YTD-COMMENT-THREAD-RENDERER')) {
+					const content = comment.querySelector('#content-text')
+					replaceAllB64In(content)
+					const contentObserver = new MutationObserver(mutations => {
+						for (const mutation of mutations) {
+							console.log('mutation', mutation)
+							// if (mutation.addedNodes.length !== mutation.removedNodes.length) return
+							contentObserver.disconnect()
+							mutation.target.innerHTML = replaceAllB64([ ...mutation.addedNodes ].filter(node => (node.innerHTML ?? node.data) !== '\n').map(node => node.outerHTML ?? node.data).join('\n'))
+							contentObserver.observe(content, observeOptions)
+						}
+					})
+					contentObserver.observe(content, observeOptions)
+				}
+			}
+		}).observe(comments, { childList: true })
+	})()
+} else if (pageType === 'arcaLive') {
+	replaceAllB64In(document.querySelector('.article-content'))
+	replaceAllB64In(document.getElementById('comment').children[1])
 }
-const updateInPage = () => {
-	for (const element of elementsNeedToUpdate) {
-		if (enabled) replaceAllB64In(element)
-		else revertReplacedIn(element)
-	}
-}
-const myPort = chrome.runtime.connect({ name: 'auto-b64d-content' })
-
-const base64Regex = /(?<!\.)\b[a-zA-Z0-9+/]{20,}={0,2}/g
-
-const testBase64 = str => /[A-Z]/.test(str) && base64Regex.test(str)
-
-chrome.runtime.onMessage.addListener(msg => {
-	if (msg.content === 'enabledUpdated') {
-		enabled = msg.value
-		updateInPage()
-	}
-})
-myPort.onMessage.addListener(msg => {
-	if (msg.content === 'connected') {
-		setElementsNeedToUpdate()
-		enabled = msg.value
-		updateInPage()
-	}
-})
