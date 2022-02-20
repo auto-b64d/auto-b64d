@@ -9,7 +9,6 @@ if (pageType !== 'unknown') {
 		arcaLive: link => `<a href='${link}'>${link}</a>`,
 		yt: link => `<a class='yt-simple-endpoint yt-formatted-string' spellcheck='false' href='${link}'>${link}</a>`,
 	}
-
 	const replaceAllB64 = str => str.replace(
 		/(?<!\.)\baHR0c[a-zA-Z0-9+/]*={0,2}/g,
 		matched => {
