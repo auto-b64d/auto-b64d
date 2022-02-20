@@ -1,6 +1,6 @@
 const url = location.href
 const pageType =
-	/^https:\/\/arca\.live\/scottoberg$|^https:\/\/arca\.live\/scottoberg\//.test(url)
+	/^https:\/\/arca\.live\/scottoberg(?:$|\/)/.test(url)
 	 ? 'arcaLive'
 	 : /^https:\/\/(?:www|m)\.youtube\.com\/watch\?v=G30Zb1uX5sk/.test(url)
 	  ? 'yt'
