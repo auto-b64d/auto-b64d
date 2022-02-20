@@ -1,7 +1,7 @@
 const pageType =
-	/arca\.live.*(?<!\/(?:edit|write))$/.test(location.href)
+	/^https:\/\/arca\.live\/scottoberg$|^https:\/\/arca\.live\/scottoberg\//.test(location.href)
 	 ? 'arcaLive'
-	 : /youtu.*G30Zb1uX5sk/.test(location.href)
+	 : /^https:\/\/(?:www|m)\.youtube\.com\/watch\?v=G30Zb1uX5sk/.test(location.href)
 	  ? 'yt'
 	  : 'unknown'
 if (pageType !== 'unknown') {
