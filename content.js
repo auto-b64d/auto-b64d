@@ -1,7 +1,8 @@
+const url = location.href
 const pageType =
-	/^https:\/\/arca\.live\/scottoberg$|^https:\/\/arca\.live\/scottoberg\//.test(location.href)
+	/^https:\/\/arca\.live\/scottoberg$|^https:\/\/arca\.live\/scottoberg\//.test(url)
 	 ? 'arcaLive'
-	 : /^https:\/\/(?:www|m)\.youtube\.com\/watch\?v=G30Zb1uX5sk/.test(location.href)
+	 : /^https:\/\/(?:www|m)\.youtube\.com\/watch\?v=G30Zb1uX5sk/.test(url)
 	  ? 'yt'
 	  : 'unknown'
 if (pageType !== 'unknown') {
@@ -57,7 +58,9 @@ if (pageType !== 'unknown') {
 			}).observe(comments, { childList: true })
 		})()
 	} else {
-		replaceAllB64In(document.querySelector('.article-content'))
-		replaceAllB64In(document.getElementById('comment').children[1])
+		if (!(url.endsWith('/edit') || url.endsWith('/write'))) {
+			replaceAllB64In(document.querySelector('.article-content'))
+			replaceAllB64In(document.getElementById('comment').children[1])
+		}
 	}
 }
